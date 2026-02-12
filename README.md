@@ -1,8 +1,17 @@
-# AWS Pricing MCP Server
+# AWS Pricing MCP Server (Fork)
 
-MCP server for accessing real-time AWS pricing information and providing cost analysis capabilities
+An MCP server for accessing real-time AWS pricing information and providing cost analysis capabilities. Forked from [awslabs/mcp](https://github.com/awslabs/mcp).
 
-**Important Note**: This server provides real-time pricing data from the AWS Pricing API. We cannot guarantee that AI assistants will always construct filters correctly or identify the absolute cheapest options. All calls are free of charge.
+**Important Note**: This server provides real-time pricing data from the public AWS Price List Bulk API. We cannot guarantee that AI assistants will always construct filters correctly or identify the absolute cheapest options. All API calls are free of charge and **require no AWS credentials**.
+
+## Changes from Upstream
+
+This fork replaces the AWS Pricing Query API (`boto3`) with the **public AWS Price List Bulk API**, which means:
+
+- **No AWS credentials required** — no IAM permissions, no `aws configure`, no `AWS_PROFILE` needed
+- **No `boto3` dependency** — uses `httpx` for direct HTTP requests to the public Bulk API
+- **Local filtering** — filters are applied locally after fetching price lists, supporting `EQUALS`, `ANY_OF`, `CONTAINS`, and `NONE_OF` filter types
+- **Index-based pagination** — uses simple integer offsets instead of AWS API pagination tokens
 
 ## Features
 
@@ -24,71 +33,86 @@ MCP server for accessing real-time AWS pricing information and providing cost an
 ### Query pricing data with natural language
 
 - Ask questions about AWS pricing in plain English, no complex query languages required
-- Get instant answers from the AWS Pricing API for any AWS service
+- Get instant answers from the AWS Price List Bulk API for any AWS service
 - Retrieve comprehensive pricing information with flexible filtering options
 
 ## Prerequisites
 
 1. Install `uv` from [Astral](https://docs.astral.sh/uv/getting-started/installation/) or the [GitHub README](https://github.com/astral-sh/uv#installation)
 2. Install Python using `uv python install 3.10`
-3. Set up AWS credentials with access to AWS services
-   - You need an AWS account with appropriate permissions
-   - Configure AWS credentials with `aws configure` or environment variables
-   - Ensure your IAM role/user has `pricing:*` permissions to access the AWS Pricing API
+
+No AWS credentials or IAM permissions are needed — this fork uses the public Bulk API.
 
 ## Installation
 
-| Kiro | Cursor | VS Code |
-|:----:|:------:|:-------:|
-| [![Add to Kiro](https://kiro.dev/images/add-to-kiro.svg)](https://kiro.dev/launch/mcp/add?name=awslabs.aws-pricing-mcp-server&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22awslabs.aws-pricing-mcp-server%40latest%22%5D%2C%22env%22%3A%7B%22FASTMCP_LOG_LEVEL%22%3A%22ERROR%22%2C%22AWS_PROFILE%22%3A%22your-aws-profile%22%2C%22AWS_REGION%22%3A%22us-east-1%22%7D%7D) | [![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en/install-mcp?name=awslabs.aws-pricing-mcp-server&config=ewogICAgImNvbW1hbmQiOiAidXZ4IGF3c2xhYnMuYXdzLXByaWNpbmctbWNwLXNlcnZlckBsYXRlc3QiLAogICAgImVudiI6IHsKICAgICAgIkZBU1RNQ1BfTE9HX0xFVkVMIjogIkVSUk9SIiwKICAgICAgIkFXU19QUk9GSUxFIjogInlvdXItYXdzLXByb2ZpbGUiLAogICAgICAiQVdTX1JFR0lPTiI6ICJ1cy1lYXN0LTEiCiAgICB9LAogICAgImRpc2FibGVkIjogZmFsc2UsCiAgICAiYXV0b0FwcHJvdmUiOiBbXQogIH0K) | [![Install on VS Code](https://img.shields.io/badge/Install_on-VS_Code-FF9900?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=AWS%20Pricing%20MCP%20Server&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22awslabs.aws-pricing-mcp-server%40latest%22%5D%2C%22env%22%3A%7B%22FASTMCP_LOG_LEVEL%22%3A%22ERROR%22%2C%22AWS_PROFILE%22%3A%22your-aws-profile%22%2C%22AWS_REGION%22%3A%22us-east-1%22%7D%2C%22disabled%22%3Afalse%2C%22autoApprove%22%3A%5B%5D%7D) |
+### From GitHub (recommended)
 
+Configure the MCP server in your MCP client configuration:
 
-### ⚡ Using uv
-
-Configure the MCP server in your MCP client configuration (e.g., for Kiro, edit `~/.kiro/settings/mcp.json`):
-
-
-**For Linux/MacOS users:**
+**For Linux/MacOS:**
 
 ```json
 {
   "mcpServers": {
-    "awslabs.aws-pricing-mcp-server": {
+    "aws-pricing": {
       "command": "uvx",
       "args": [
-         "awslabs.aws-pricing-mcp-server@latest"
+        "--from",
+        "git+https://github.com/sebdroid/aws-pricing-mcp-server",
+        "awslabs.aws-pricing-mcp-server"
       ],
       "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_PROFILE": "your-aws-profile",
-        "AWS_REGION": "us-east-1"
-      },
-      "disabled": false,
-      "autoApprove": []
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
     }
   }
 }
 ```
 
-**For Windows users:**
+**For Windows:**
 
 ```json
 {
   "mcpServers": {
-    "awslabs.aws-pricing-mcp-server": {
+    "aws-pricing": {
       "command": "uvx",
       "args": [
-         "--from",
-         "awslabs.aws-pricing-mcp-server@latest",
-         "awslabs.aws-pricing-mcp-server.exe"
+        "--from",
+        "git+https://github.com/sebdroid/aws-pricing-mcp-server",
+        "awslabs.aws-pricing-mcp-server.exe"
       ],
       "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_PROFILE": "your-aws-profile",
-        "AWS_REGION": "us-east-1"
-      },
-      "disabled": false,
-      "autoApprove": []
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    }
+  }
+}
+```
+
+### From a local clone
+
+```bash
+git clone https://github.com/sebdroid/aws-pricing-mcp-server.git
+cd aws-pricing-mcp-server
+uv sync
+```
+
+Then configure your MCP client to use the local directory:
+
+```json
+{
+  "mcpServers": {
+    "aws-pricing": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/aws-pricing-mcp-server",
+        "awslabs.aws-pricing-mcp-server"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
     }
   }
 }
@@ -96,57 +120,35 @@ Configure the MCP server in your MCP client configuration (e.g., for Kiro, edit 
 
 ### Using Docker
 
-or docker after a successful `docker build -t awslabs/aws-pricing-mcp-server .`:
-
-```file
-# fictitious `.env` file with AWS temporary credentials
-AWS_ACCESS_KEY_ID=ASIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-AWS_SESSION_TOKEN=AQoEXAMPLEH4aoAH0gNCAPy...truncated...zrkuWJOgQs8IZZaIv2BXIa2R4Olgk
-AWS_REGION=us-east-1
-```
+After a successful `docker build -t awslabs/aws-pricing-mcp-server .`:
 
 ```json
-  {
-    "mcpServers": {
-      "awslabs.aws-pricing-mcp-server": {
-        "command": "docker",
-        "args": [
-          "run",
-          "--rm",
-          "--interactive",
-          "--env",
-          "FASTMCP_LOG_LEVEL=ERROR",
-          "--env-file",
-          "/full/path/to/file/above/.env",
-          "awslabs/aws-pricing-mcp-server:latest"
-        ],
-        "env": {},
-        "disabled": false,
-        "autoApprove": []
-      }
+{
+  "mcpServers": {
+    "aws-pricing": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "--interactive",
+        "--env",
+        "FASTMCP_LOG_LEVEL=ERROR",
+        "awslabs/aws-pricing-mcp-server:latest"
+      ]
     }
   }
+}
 ```
 
-NOTE: Your credentials will need to be kept refreshed from your host
+## Configuration
 
-### AWS Authentication
+The server uses one optional environment variable:
 
-The MCP server requires specific AWS permissions and configuration:
-
-#### Required Permissions
-Your AWS IAM role or user must have `pricing:*` permissions to access the AWS Pricing API. The server only accesses generally available AWS pricing information and does not retrieve any user-specific data. All pricing API calls are **free of charge** and do not incur any costs.
-
-#### Configuration
-The server uses two key environment variables:
-
-- **`AWS_PROFILE`**: Specifies the AWS profile to use from your AWS configuration file. If not provided, it defaults to the "default" profile.
-- **`AWS_REGION`**: Determines the geographically closest AWS Pricing API endpoint to use. This improves performance by routing requests to the nearest regional endpoint.
+- **`AWS_REGION`**: Sets the default region for pricing queries when no region is specified (default: `us-east-1`). This does **not** require AWS credentials — it simply controls which regional price list is fetched from the public Bulk API.
 
 ```json
 "env": {
-  "AWS_PROFILE": "your-aws-profile",
+  "FASTMCP_LOG_LEVEL": "ERROR",
   "AWS_REGION": "us-east-1"
 }
 ```
