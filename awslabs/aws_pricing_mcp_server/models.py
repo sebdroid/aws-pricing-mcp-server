@@ -83,6 +83,11 @@ REGION_FIELD = Field(
     description='AWS region(s) - single region string (e.g., "us-east-1") or list for multi-region comparison (e.g., ["us-east-1", "us-west-2", "eu-west-1"]). Optional: omit for global services like DataTransfer or CloudFront that don\'t have region-specific pricing.',
 )
 
+SINGLE_REGION_FIELD = Field(
+    None,
+    description='AWS region (e.g., "us-east-1", "eu-west-2"). Defaults to AWS_REGION env var (us-east-1). Attributes and values can differ by region, so set this to match the region you plan to query with get_pricing().',
+)
+
 ATTRIBUTE_NAMES_FIELD = Field(
     ..., description='List of attribute names (e.g., ["instanceType", "location", "storageClass"])'
 )

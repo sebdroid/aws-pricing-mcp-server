@@ -142,9 +142,12 @@ After a successful `docker build -t awslabs/aws-pricing-mcp-server .`:
 
 ## Configuration
 
-The server uses one optional environment variable:
+| Variable            | Default     | Description                                                                                                                                                                                                          |
+| ------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FASTMCP_LOG_LEVEL` | `WARNING`   | Log level (`ERROR`, `WARNING`, `INFO`, `DEBUG`)                                                                                                                                                                      |
+| `AWS_REGION`        | `us-east-1` | Fallback region for `get_pricing_service_attributes` and `get_pricing_attribute_values` when no `region` parameter is provided. All three discovery tools accept an explicit `region` parameter that overrides this. |
 
-- **`AWS_REGION`**: Sets the default region for pricing queries when no region is specified (default: `us-east-1`). This does **not** require AWS credentials — it simply controls which regional price list is fetched from the public Bulk API.
+No AWS credentials are needed — all data comes from the public Bulk API.
 
 ```json
 "env": {

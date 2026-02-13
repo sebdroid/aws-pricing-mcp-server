@@ -35,6 +35,7 @@ from awslabs.aws_pricing_mcp_server.models import (
     SERVICE_ATTRIBUTES_FILTER_FIELD,
     SERVICE_CODE_FIELD,
     SERVICE_CODES_FILTER_FIELD,
+    SINGLE_REGION_FIELD,
     ErrorResponse,
     OutputOptions,
     PricingFilter,
@@ -942,6 +943,7 @@ async def get_pricing_service_codes(
 
     **PARAMETERS:**
     - service_code: AWS service code from get_pricing_service_codes() (e.g., 'AmazonEC2', 'AmazonRDS')
+    - region (optional): AWS region (e.g., 'us-east-1', 'eu-west-2'). Defaults to AWS_REGION env var. Set this to match the region you plan to query with get_pricing().
     - filter (optional): Case-insensitive regex pattern to filter attribute names (e.g., "instance" matches "instanceType", "instanceFamily")
 
     **RETURNS:** List of attribute names (e.g., 'instanceType', 'location', 'storageClass') that can be used as filters.
@@ -957,12 +959,14 @@ async def get_pricing_service_codes(
 async def get_pricing_service_attributes(
     ctx: Context,
     service_code: str = SERVICE_CODE_FIELD,
+    region: Optional[str] = SINGLE_REGION_FIELD,
     filter: Optional[str] = SERVICE_ATTRIBUTES_FILTER_FIELD,
 ) -> Union[List[str], Dict[str, Any]]:
     """Retrieve all available attributes for a specific AWS service.
 
     Args:
         service_code: The service code to query (e.g., 'AmazonEC2', 'AmazonS3')
+        region: Optional AWS region (e.g., 'eu-west-2'). Defaults to AWS_REGION env var.
         filter: Optional regex pattern to filter attribute names (case-insensitive)
         ctx: MCP context for logging and state management
 
@@ -972,12 +976,15 @@ async def get_pricing_service_attributes(
     # Handle Pydantic Field objects when called directly (not through MCP framework)
     if isinstance(filter, FieldInfo):
         filter = filter.default
+    if isinstance(region, FieldInfo):
+        region = region.default
 
-    logger.info(f'Retrieving attributes for AWS service: {service_code}')
+    effective_region = region or consts.AWS_REGION
+    logger.info(f'Retrieving attributes for AWS service: {service_code} in {effective_region}')
 
     # Fetch price list and extract unique attribute keys from products
     try:
-        data = await fetch_price_list(service_code, consts.AWS_REGION)
+        data = await fetch_price_list(service_code, effective_region)
         products = data.get('products', {})
     except Exception as e:
         error_msg = str(e)
@@ -1136,6 +1143,7 @@ async def _get_single_attribute_values(
 
     **PARAMETERS:**
     - Service code from get_pricing_service_codes() (e.g., 'AmazonEC2', 'AmazonRDS')
+    - region (optional): AWS region (e.g., 'us-east-1', 'eu-west-2'). Defaults to AWS_REGION env var. Set this to match the region you plan to query with get_pricing().
     - List of attribute names from get_pricing_service_attributes() (e.g., ['instanceType', 'location'])
     - filters (optional): Dictionary mapping attribute names to regex patterns (e.g., {'instanceType': 't3'})
 
@@ -1163,6 +1171,7 @@ async def _get_single_attribute_values(
 async def get_pricing_attribute_values(
     ctx: Context,
     service_code: str = SERVICE_CODE_FIELD,
+    region: Optional[str] = SINGLE_REGION_FIELD,
     attribute_names: List[str] = ATTRIBUTE_NAMES_FIELD,
     filters: Optional[Dict[str, str]] = ATTRIBUTE_VALUES_FILTERS_FIELD,
 ) -> Union[Dict[str, List[str]], Dict[str, Any]]:
@@ -1170,6 +1179,7 @@ async def get_pricing_attribute_values(
 
     Args:
         service_code: The service code to query (e.g., 'AmazonEC2', 'AmazonS3')
+        region: Optional AWS region (e.g., 'eu-west-2'). Defaults to AWS_REGION env var.
         attribute_names: List of attribute names to get values for (e.g., ['instanceType', 'location'])
         filters: Optional dictionary mapping attribute names to regex patterns for filtering
         ctx: MCP context for logging and state management
@@ -1179,6 +1189,10 @@ async def get_pricing_attribute_values(
     """
     if isinstance(filters, FieldInfo):
         filters = filters.default
+    if isinstance(region, FieldInfo):
+        region = region.default
+
+    effective_region = region or consts.AWS_REGION
 
     if not attribute_names:
         return await create_error_response(
@@ -1191,12 +1205,12 @@ async def get_pricing_attribute_values(
         )
 
     logger.info(
-        f'Retrieving values for {len(attribute_names)} attributes of service: {service_code}'
+        f'Retrieving values for {len(attribute_names)} attributes of service: {service_code} in {effective_region}'
     )
 
     # Fetch price list to extract attribute values
     try:
-        data = await fetch_price_list(service_code, consts.AWS_REGION)
+        data = await fetch_price_list(service_code, effective_region)
         products = data.get('products', {})
     except Exception as e:
         return await create_error_response(

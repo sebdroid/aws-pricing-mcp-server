@@ -1185,7 +1185,7 @@ class TestGetPricingAttributeValues:
             return_value=bulk_data,
         ):
             result = await get_pricing_attribute_values(
-                mock_context, service_code, attribute_names, filters
+                mock_context, service_code, None, attribute_names, filters
             )
 
             assert result == expected, f"Failed test case '{test_description}'"
@@ -1205,7 +1205,7 @@ class TestGetPricingAttributeValues:
             return_value=bulk_data,
         ):
             result = await get_pricing_attribute_values(
-                mock_context, 'AmazonEC2', ['instanceType'], {'instanceType': '[invalid'}
+                mock_context, 'AmazonEC2', None, ['instanceType'], {'instanceType': '[invalid'}
             )
 
             assert isinstance(result, dict)
@@ -1219,7 +1219,7 @@ class TestGetPricingAttributeValues:
     @pytest.mark.asyncio
     async def test_get_pricing_attribute_values_empty_attribute_list(self, mock_context):
         """Test error handling when empty attribute list is provided."""
-        result = await get_pricing_attribute_values(mock_context, 'AmazonEC2', [])
+        result = await get_pricing_attribute_values(mock_context, 'AmazonEC2', None, [])
 
         assert isinstance(result, dict)
         assert result['status'] == 'error'
@@ -1244,7 +1244,7 @@ class TestGetPricingAttributeValues:
             return_value=bulk_data,
         ):
             result = await get_pricing_attribute_values(
-                mock_context, 'InvalidService', ['invalidAttribute']
+                mock_context, 'InvalidService', None, ['invalidAttribute']
             )
 
             assert isinstance(result, dict)
@@ -1268,7 +1268,7 @@ class TestGetPricingAttributeValues:
             return_value=bulk_data,
         ):
             result = await get_pricing_attribute_values(
-                mock_context, 'AmazonEC2', ['instanceType', 'invalidAttribute']
+                mock_context, 'AmazonEC2', None, ['instanceType', 'invalidAttribute']
             )
 
             assert isinstance(result, dict)
@@ -1289,7 +1289,7 @@ class TestGetPricingAttributeValues:
             side_effect=Exception('Connection failed'),
         ):
             result = await get_pricing_attribute_values(
-                mock_context, 'AmazonEC2', ['instanceType']
+                mock_context, 'AmazonEC2', None, ['instanceType']
             )
 
         assert isinstance(result, dict)
